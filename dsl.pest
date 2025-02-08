@@ -1,0 +1,18 @@
+super_config = { "prometheus_addr = " ~ ANY* }
+proxy_section = { "[proxy]" }
+lb_section = { "[load_balancer]" }
+listener = { "listener = " ~ ANY* }
+tls_certificate = { "tls_certificate = " ~ ANY* }
+tls_certificate_key = { "tls_certificate_key = " ~ ANY* }
+health_check = { "health_check = " ~ ("true" | "false") }
+health_check_frequency = { "health_check_frequency = " ~ ASCII_DIGIT+ }
+parallel_health_check = { "parallel_health_check = " ~ ("true" | "false") }
+domain_header = { "[[\"" ~ ANY+ ~ "\"]]" }
+route_header = { "[[[\"" ~ ANY+ ~ "\"]]]" }
+config_entry = { ANY+ }
+
+file = _{ super_config ~ (proxy_section ~ proxy_config*)? ~ (lb_section ~ lb_config*)? }
+proxy_config = _{ listener ~ tls_certificate? ~ tls_certificate_key? ~ domain* }
+lb_config = _{ listener ~ tls_certificate? ~ tls_certificate_key? ~ health_check? ~ health_check_frequency? ~ parallel_health_check? ~ domain* }
+domain = _{ domain_header ~ config_entry* ~ route* }
+route = _{ route_header ~ config_entry* }

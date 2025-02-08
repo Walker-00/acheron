@@ -9,9 +9,11 @@ use nom::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use wtf::main4;
 
 mod idk;
 mod manual;
+mod wtf;
 
 // #[derive(Serialize, Deserialize)]
 // struct ProxyConfig {
@@ -221,5 +223,5 @@ fn main1() {
 }
 
 fn main() {
-    main3();
+    main4();
 }
