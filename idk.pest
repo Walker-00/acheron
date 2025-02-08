@@ -1,10 +1,11 @@
-char = { ASCII_ALPHANUMERIC | "." | "_" | "/" }
-name = { char+ }
-value = { char* }
-main_section = { "[" ~ name ~ "]" }
-domain_section = { "[[" ~ name ~ "]]" }
-path_section = { "[[[" ~ name ~ "]]]" }
-property = { name ~ "=" ~ value }
+char           =  { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" | " " }
+name           = @{ char+ }
+value          = @{ char* }
+property       =  { name ~ "=" ~ value }
+domain_section =  { "[[" ~ name ~ "]]" }
+path_section   =  { "[[[" ~ name ~ "]]]" }
+main_section   =  { "[" ~ name ~ "]" }
+
 
 file = {
     SOI ~

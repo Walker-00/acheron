@@ -305,11 +305,12 @@ use pest::Parser;
 use pest_derive::Parser;
 
 #[derive(Parser)]
-#[grammar = "idk.rs"]
+#[grammar = "idk.pest"]
 pub struct INIParser;
 
-fn main() {
-    let unparsed_file = fs::read_to_string("config.ini").expect("cannot read file");
+pub fn main5() {
+    let unparsed_file =
+        fs::read_to_string("/home/walker/.config/gtk-3.0/settings.ini").expect("cannot read file");
 
     let file = INIParser::parse(Rule::file, &unparsed_file)
         .expect("unsuccessful parse") // unwrap the parse result
@@ -322,7 +323,7 @@ fn main() {
 
     for line in file.into_inner() {
         match line.as_rule() {
-            Rule::section => {
+            Rule::main_section => {
                 let mut inner_rules = line.into_inner(); // { name }
                 current_section_name = inner_rules.next().unwrap().as_str();
             }

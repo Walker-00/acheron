@@ -1,3 +1,5 @@
+use wtf::main5;
+
 // use nom::{
 //     IResult, Parser,
 //     bytes::complete::{tag, take_while1},
@@ -8,7 +10,7 @@
 // };
 // use std::collections::HashMap;
 //
-// mod wtf;
+mod wtf;
 //
 // #[derive(Serialize, Deserialize)]
 // struct ProxyConfig {
@@ -217,4 +219,6 @@
 //     }
 // }
 
-fn main() {}
+fn main() {
+    main5();
+}

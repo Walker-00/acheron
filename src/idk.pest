@@ -1,10 +1,11 @@
 char = { ASCII_ALPHANUMERIC | "." | "_" | "/" }
-name = { char+ }
-value = { char* }
+name = @{ char+ }
+value = @{ char* }
 main_section = { "[" ~ name ~ "]" }
 domain_section = { "[[" ~ name ~ "]]" }
 path_section = { "[[[" ~ name ~ "]]]" }
-property = { name ~ "=" ~ value }
+property = { name~"="~value }
+WHITESPACE = _{ " " }
 
 file = {
     SOI ~
