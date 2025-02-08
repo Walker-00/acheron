@@ -1,3 +1,4 @@
+use fuckk::main4;
 use wtf::main5;
 
 // use nom::{
@@ -10,6 +11,9 @@ use wtf::main5;
 // };
 // use std::collections::HashMap;
 //
+mod fuckk;
+mod manual;
+mod with_serde;
 mod wtf;
 //
 // #[derive(Serialize, Deserialize)]
@@ -220,5 +224,5 @@ mod wtf;
 // }
 
 fn main() {
-    main5();
+    main4();
 }

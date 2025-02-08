@@ -298,11 +298,73 @@
 //     }
 // }
 
-use std::collections::HashMap;
 use std::fs;
+use std::{collections::HashMap, sync::Arc};
 
 use pest::Parser;
 use pest_derive::Parser;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+struct ProxyConfig {
+    listener: String,
+    tls_certificate: Option<String>,
+    tls_certificate_key: Option<String>,
+    servers: HashMap<String, ProxyHostConfig>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct LoadBalancerConfig {
+    listener: String,
+    upstreams: Vec<String>,
+    health_check: Option<bool>,
+    health_check_frequency: Option<u64>,
+    parallel_health_check: Option<bool>,
+    tls_certificate: Option<String>,
+    tls_certificate_key: Option<String>,
+    servers: HashMap<String, LBHostConfig>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Config {
+    prometheus_addr: Option<String>,
+    proxy: Option<Vec<ProxyConfig>>,
+    load_balancer: Option<Vec<LoadBalancerConfig>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ProxyHostConfig {
+    pub proxy_addr: String,
+    pub proxy_tls: bool,
+    pub proxy_headers: Option<Vec<(String, String)>>,
+    pub proxy_uds: Option<bool>,
+    pub routes: Option<HashMap<String, ProxyPathBaseHostConfig>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ProxyPathBaseHostConfig {
+    pub proxy_addr: String,
+    pub proxy_tls: bool,
+    pub proxy_headers: Option<Vec<(String, String)>>,
+    pub proxy_uds: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LBHostConfig {
+    pub load_balancer_tls: bool,
+    pub load_balancer_headers: Option<Vec<(String, String)>>,
+}
+
+pub struct AppLB {
+    pub host_configs: Arc<HashMap<String, LBHostConfig>>,
+    /* pub lb_upstreams: Arc<LoadBalancer<RoundRobin>>, */
+    pub routes: Option<HashMap<String, AppPathBaseLB>>,
+}
+
+pub struct AppPathBaseLB {
+    pub host_configs: Arc<HashMap<String, LBHostConfig>>,
+    /* pub lb_upstreams: Arc<LoadBalancer<RoundRobin>>, */
+}
 
 #[derive(Parser)]
 #[grammar = "idk.pest"]
@@ -322,6 +384,8 @@ pub fn main5() {
     let mut current_section_name = "";
 
     for line in file.into_inner() {
+        println!("{line}");
+
         match line.as_rule() {
             Rule::main_section => {
                 let mut inner_rules = line.into_inner(); // { name }

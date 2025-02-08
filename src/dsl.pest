@@ -1,35 +1,21 @@
+char         =  { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" | "\"" }
+name         = @{ char+ }
+value        = @{ ANY* }
+fields =  { name ~ " = " ~ value }
+proxy_section = { "[proxy]" }
+lb_section = { "[load_balancer]" }
+listener = { "listener = " ~ ANY* }
+tls_certificate = { "tls_certificate = " ~ ANY* }
+tls_certificate_key = { "tls_certificate_key = " ~ ANY* }
+health_check = { "health_check = " ~ ("true" | "false") }
+health_check_frequency = { "health_check_frequency = " ~ ASCII_DIGIT+ }
+parallel_health_check = { "parallel_health_check = " ~ ("true" | "false") }
+domain_header = { "[[\"" ~ ANY+ ~ "\"]]" }
+route_header = { "[[[\"" ~ ANY+ ~ "\"]]]" }
+config_entry = { ANY+ }
 
-WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
-
-file = { super_config ~ (proxy_config | lb_config)* }
-
-super_config = { "prometheus_addr" ~ "=" ~ string }
-
-proxy_config = { 
-    "[proxy]" ~ listener ~ tls_certificate? ~ tls_certificate_key? ~ domain+ 
-}
-
-lb_config = { 
-    "[load_balancer]" ~ listener ~ health_check? ~ health_check_frequency? ~ parallel_health_check? ~ tls_certificate? ~ tls_certificate_key? ~ domain+ 
-}
-
-listener = { "listener" ~ "=" ~ string }
-tls_certificate = { "tls_certificate" ~ "=" ~ string }
-tls_certificate_key = { "tls_certificate_key" ~ "=" ~ string }
-health_check = { "health_check" ~ "=" ~ ("true" | "false") }
-health_check_frequency = { "health_check_frequency" ~ "=" ~ number }
-parallel_health_check = { "parallel_health_check" ~ "=" ~ ("true" | "false") }
-
-domain = { "[[" ~ string ~ "]]" ~ config_entry* ~ route* }
-
-route = { "[[[" ~ string ~ "]]]" ~ config_entry* }
-
-config_entry = { key ~ "=" ~ value }
-
-key = { ASCII_ALPHANUMERIC+ }
-value = { string | number | boolean }
-
-string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
-number = @{ ASCII_DIGIT+ }
-boolean = { "true" | "false" }
-
+file = _{ fields ~ (proxy_section ~ proxy_config*)? ~ (lb_section ~ lb_config*)? }
+proxy_config = _{ listener ~ tls_certificate? ~ tls_certificate_key? ~ domain* }
+lb_config = _{ listener ~ tls_certificate? ~ tls_certificate_key? ~ health_check? ~ health_check_frequency? ~ parallel_health_check? ~ domain* }
+domain = _{ domain_header ~ config_entry* ~ route* }
+route = _{ route_header ~ config_entry* }
