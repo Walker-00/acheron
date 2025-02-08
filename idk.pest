@@ -1,0 +1,14 @@
+char = { ASCII_ALPHANUMERIC | "." | "_" | "/" }
+name = { char+ }
+value = { char* }
+main_section = { "[" ~ name ~ "]" }
+domain_section = { "[[" ~ name ~ "]]" }
+path_section = { "[[[" ~ name ~ "]]]" }
+property = { name ~ "=" ~ value }
+
+file = {
+    SOI ~
+    ((property | main_section | domain_section | path_section)? ~ NEWLINE)* ~
+    EOI
+}
+

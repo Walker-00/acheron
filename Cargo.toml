@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nom = "8.0.0"
 pest = "2.7.15"
 pest_derive = "2.7.15"
 serde = { version = "1.0.217", features = ["derive"] }
