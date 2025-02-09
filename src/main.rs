@@ -387,19 +387,15 @@
 //     }
 // }
 
-use nom::{
-    IResult, Parser,
-    branch::alt,
-    bytes::complete::{tag, take_while, take_while1},
-    character::complete::{char, line_ending, multispace0, multispace1},
-    combinator::{all_consuming, map, opt},
-    multi::{many0, separated_list0},
-    sequence::{delimited, preceded, separated_pair, terminated},
-};
-use serde::{Deserialize, Serialize};
+use pest::Parser;
+use pest_derive::Parser;
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(Parser)]
+#[grammar = "proxy_config.pest"] // Path to the grammar file
+struct ProxyConfigParser;
+
+#[derive(Debug, Default)]
 struct ProxyConfig {
     listener: String,
     tls_certificate: Option<String>,
@@ -407,102 +403,94 @@ struct ProxyConfig {
     servers: HashMap<String, ProxyHostConfig>,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ProxyHostConfig {
-    pub proxy_addr: String,
-    pub proxy_tls: bool,
-    pub proxy_headers: Option<Vec<(String, String)>>,
-    pub proxy_uds: bool,
-    pub routes: HashMap<String, ProxyPathBaseHostConfig>,
+#[derive(Debug, Default)]
+struct ProxyHostConfig {
+    proxy_addr: String,
+    proxy_tls: bool,
+    proxy_headers: Option<Vec<(String, String)>>,
+    proxy_uds: bool,
+    routes: HashMap<String, ProxyPathBaseHostConfig>,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ProxyPathBaseHostConfig {
-    pub proxy_addr: Option<String>,
-    pub proxy_tls: bool,
-    pub proxy_headers: Option<Vec<(String, String)>>,
-    pub proxy_uds: bool,
+#[derive(Debug, Default)]
+struct ProxyPathBaseHostConfig {
+    proxy_addr: Option<String>,
+    proxy_tls: bool,
+    proxy_headers: Option<Vec<(String, String)>>,
+    proxy_uds: bool,
 }
 
-fn parse_key_value(input: &str) -> IResult<&str, (&str, &str)> {
-    separated_pair(
-        take_while1(|c: char| c.is_alphanumeric() || c == '_'),
-        char('='),
-        preceded(multispace0, take_while(|c| c != '\n' && c != '"')),
-    )
-    .parse(input)
-}
+fn parse_proxy_config(input: &str) -> Result<Vec<ProxyConfig>, String> {
+    let parsed = ProxyConfigParser::parse(Rule::document, input)
+        .map_err(|e| format!("Parsing error: {}", e))?;
 
-fn parse_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
-    delimited(
-        char('['),
-        separated_list0(
-            char(','),
-            map(
-                separated_pair(
-                    take_while1(|c| c != ':'),
-                    char(':'),
-                    take_while(|c| c != ',' && c != ']'),
-                ),
-                |(k, v)| (k.trim().to_string(), v.trim().to_string()),
-            ),
-        ),
-        char(']'),
-    )
-    .parse(input)
-}
+    let mut proxy_configs = Vec::new();
+    let mut current_proxy = ProxyConfig::default();
 
-fn parse_section_header(input: &str) -> IResult<&str, &str> {
-    delimited(tag("["), take_while1(|c| c != ']'), tag("]")).parse(input)
-}
+    for record in parsed {
+        match record.as_rule() {
+            Rule::proxy_section => {
+                if !current_proxy.listener.is_empty() {
+                    proxy_configs.push(current_proxy);
+                    current_proxy = ProxyConfig::default();
+                }
 
-fn parse_proxy_config(input: &str) -> IResult<&str, ProxyConfig> {
-    let (input, listener) = preceded(
-        terminated(tag("listener"), char('=')),
-        take_while(|c| c != '\n'),
-    )
-    .parse(input)?;
+                for pair in record.into_inner() {
+                    match pair.as_rule() {
+                        Rule::key_value_line => {
+                            let mut inner = pair.into_inner();
+                            let key = inner.next().unwrap().as_str();
+                            let value = inner.next().unwrap().as_str();
 
-    let (input, tls_certificate) = opt(preceded(
-        terminated(tag("tls_certificate"), char('=')),
-        take_while(|c| c != '\n'),
-    ))
-    .parse(input)?;
+                            match key {
+                                "listener" => current_proxy.listener = value.to_string(),
+                                "tls_certificate" => {
+                                    current_proxy.tls_certificate = Some(value.to_string())
+                                }
+                                "tls_certificate_key" => {
+                                    current_proxy.tls_certificate_key = Some(value.to_string())
+                                }
+                                _ => {}
+                            }
+                        }
+                        Rule::domain_section => {
+                            // Parse domains
+                            // Similar logic applies here for nesting into domains and routes
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
 
-    let (input, tls_certificate_key) = opt(preceded(
-        terminated(tag("tls_certificate_key"), char('=')),
-        take_while(|c| c != '\n'),
-    ))
-    .parse(input)?;
+    if !current_proxy.listener.is_empty() {
+        proxy_configs.push(current_proxy);
+    }
 
-    Ok((input, ProxyConfig {
-        listener: listener.trim().to_string(),
-        tls_certificate: tls_certificate.map(|s| s.trim().to_string()),
-        tls_certificate_key: tls_certificate_key.map(|s| s.trim().to_string()),
-        servers: HashMap::new(), // You can expand this part
-    }))
+    Ok(proxy_configs)
 }
 
 fn main() {
-    let input = r#"[proxy]
-listener = "127.0.0.1:8080"
-tls_certificate = "path/to/cert1"
-tls_certificate_key = "path/to/key1"
-
-[[ "domain1.com" ]]
-proxy_addr = "/tmp/proxy.sock"
-proxy_tls = true
-proxy_headers = [["Header1": "Value1"]]
-proxy_uds = true
-
-[[[ "/route1" ]]]
-proxy_addr = "192.168.1.2"
-proxy_tls = false
-proxy_headers = [["Header2": "Value2"]]
-"#;
+    let input = r#"
+    [proxy]
+    listener = "127.0.0.1:8080"
+    tls_certificate = "cert.pem"
+    tls_certificate_key = "key.pem"
+    
+    [[ "example.com" ]]
+    proxy_addr = "/tmp/proxy.sock"
+    proxy_tls = true
+    proxy_headers = [["Header1": "Value1"]]
+    proxy_uds = true
+    
+    [[[ "/route" ]]]
+    proxy_addr = "192.168.1.2"
+    "#;
 
     match parse_proxy_config(input) {
-        Ok((_rest, config)) => println!("Parsed config: {:#?}", config),
-        Err(err) => eprintln!("Error parsing config: {:#?}", err),
+        Ok(configs) => println!("Parsed configs: {:#?}", configs),
+        Err(e) => eprintln!("Error: {}", e),
     }
 }
