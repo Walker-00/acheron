@@ -210,44 +210,27 @@ fn parse_headers(input: &str) -> Result<Vec<(String, String)>, String> {
 }
 
 fn main() {
-    //     let input = r#"[proxy]
-    // listener = "127.0.0.1:8080"
-    // tls_certificate = "path/to/cert1"
-    // tls_certificate_key = "path/to/key1"
-    //
-    // [[ "domain1.com" ]]
-    // proxy_addr = "/tmp/proxy.sock"
-    // proxy_tls = true
-    // proxy_headers = [["Header1": "Value1"]]
-    // proxy_uds = true
-    //
-    // [[[ "/route1" ]]]
-    // proxy_addr = "192.168.1.2"
-    // proxy_tls = false
-    // proxy_headers = [["Header2": "Value2"]]
-    // "#;
-    //
-    //     let input = r#"
-    // [proxy]
-    // listener = "127.0.0.1:8080"
-    //
-    // [[example.com]]
-    // proxy_addr = "127.0.0.2:8081"
-    // proxy_tls = invalid_value
-    //
-    // [load_balancer]
-    // listener = "0.0.0.0:9090"
-    // upstreams = "127.0.0.1:8080,127.0.0.1:8081"
-    // health_check_frequency = not_a_number
-    //
-    // "#;
-    //
-    //     match parse_combined_config(input) {
-    //         Ok(configs) => println!("Parsed configs: {:#?}", configs),
-    //         Err(err) => eprintln!("Error: {}", err),
-    //     }
+    let input = r#"[proxy]
+    listener = "127.0.0.1:8080"
+    tls_certificate = "path/to/cert1"
+    tls_certificate_key = "path/to/key1"
 
-    main6();
+    [[ "domain1.com" ]]
+    proxy_addr = "/tmp/proxy.sock"
+    proxy_tls = true
+    proxy_headers = [["Header1": "Value1"]]
+    proxy_uds = true
+
+    [[[ "/route1" ]]]
+    proxy_addr = "192.168.1.2"
+    proxy_tls = false
+    proxy_headers = [["Header2": "Value2"]]
+    "#;
+
+    match parse_proxy_config(input) {
+        Ok(configs) => println!("Parsed configs: {:#?}", configs),
+        Err(err) => eprintln!("Error: {}", err),
+    }
 }
 
 #[cfg(test)]
