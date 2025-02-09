@@ -191,7 +191,7 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
             Rule::upstreams => {
                 upstreams = pair
                     .into_inner()
-                    .map(|inner_pair| inner_pair.as_str().to_string())
+                    .map(|inner_pair| inner_pair.as_str().trim().trim_matches('"').to_string())
                     .collect();
             }
             Rule::health_check => health_check = Some(pair.as_str() == "true"),
