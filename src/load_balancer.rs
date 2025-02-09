@@ -168,19 +168,16 @@ fn parse_headers(input: &str) -> Result<Vec<(String, String)>, String> {
     Ok(headers)
 }
 
-fn main() {
-    let input = r#"[load_balancer]
-listener = \"127.0.0.1:9090\"
-upstreams = \"10.0.0.1,10.0.0.2\"
+pub fn main6() {
+    let input = r#"
+[load_balancer]
+upstreams = "127.0.0.1:8080,127.0.0.1:8081"
 health_check = true
 health_check_frequency = 30
-parallel_health_check = false
-tls_certificate = \"path/to/cert\"
-tls_certificate_key = \"path/to/key\"
+parallel_health_check = 5
+tls_certificate = "path/to/lb-cert.pem"
+tls_certificate_key = "path/to/lb-key.pem"
 
-[[\"domain1.com\"]]
-load_balancer_tls = true
-load_balancer_headers = [[\"Header1\": \"Value1\"]]
 "#;
 
     match parse_load_balancer_config(input) {
