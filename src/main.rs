@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Parser)]
-#[grammar = "done.pest"] // This is the path to your .pest file
+#[grammar = "done.pest"]
 pub struct ConfigParser;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 struct Config {
     prometheus_addr: Option<String>,
     proxy: Option<Vec<ProxyConfig>>,
@@ -196,7 +196,6 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
                     .to_string()
             }
             Rule::upstreams => {
-                println!("{}", pair.clone().into_inner().next().unwrap().as_str());
                 upstreams = pair
                     .into_inner()
                     .next()
@@ -305,33 +304,41 @@ fn main() {
         .expect("Failed to parse input")
         .next()
         .unwrap();
-    let mut proxy_configs = vec![];
-    let mut lb_configs = vec![];
-    let mut prometheus_addr = None;
     let mut config = Config::default();
 
     for pair in parsed.into_inner() {
         match pair.as_rule() {
             Rule::prometheus_addr => {
-                prometheus_addr = Some(
+                config.prometheus_addr = Some(
                     pair.into_inner()
                         .next()
                         .unwrap()
                         .as_str()
                         .trim()
-                        .trim_matches('"'),
+                        .trim_matches('"')
+                        .to_string(),
                 );
             }
             Rule::main_proxy_config => {
                 let proxy_config = parse_proxy_config(pair);
-                proxy_configs.push(proxy_config);
+
+                if let Some(ref mut proxy_configs) = config.proxy {
+                    proxy_configs.push(proxy_config);
+                } else {
+                    config.proxy = Some(vec![proxy_config]);
+                }
             }
             Rule::main_lb_config => {
                 let load_balancer_config = parse_load_balancer_config(pair);
-                lb_configs.push(load_balancer_config);
+
+                if let Some(ref mut lb_configs) = config.load_balancer {
+                    lb_configs.push(load_balancer_config);
+                } else {
+                    config.load_balancer = Some(vec![load_balancer_config])
+                }
             }
             Rule::EOI => {
-                config.prometheus_addr = prometheus_addr;
+                println!("{config:#?}");
             }
             _ => {
                 println!("No Match {pair}");
