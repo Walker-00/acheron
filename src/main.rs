@@ -227,7 +227,17 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
                         .to_string(),
                 )
             }
-            Rule::tls_certificate_key => tls_certificate_key = Some(pair.as_str().to_string()),
+            Rule::tls_certificate_key => {
+                tls_certificate_key = Some(
+                    pair.into_inner()
+                        .next()
+                        .unwrap()
+                        .as_str()
+                        .trim()
+                        .trim_matches('"')
+                        .to_string(),
+                )
+            }
             _ => {}
         }
     }
