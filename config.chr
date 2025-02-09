@@ -17,6 +17,25 @@ proxy_uds = true
 [[domain=example.net]]
 proxy_addr = "192.168.1.3"
 
+[proxy]
+listener = "0.0.0.0:8080"
+tls_certificate = "cert.pem"
+tls_certificate_key = "key.pem"
+
+[[domain=example.com]]
+proxy_addr = "192.168.1.1"
+proxy_tls = true
+proxy_headers = [["Authorization": "Bearer token"]]
+
+[[[route=/api]]]
+proxy_addr = "192.168.1.2"
+proxy_tls = false
+
+proxy_uds = true
+
+[[domain=example.net]]
+proxy_addr = "192.168.1.3"
+
 [load_balancer]
 listener = "0.0.0.0:9091"
 upstreams = ["192.168.1.4:8000", "192.168.1.5:8000"]

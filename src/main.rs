@@ -58,10 +58,11 @@ fn parse_proxy_config(pair: pest::iterators::Pair<Rule>) -> ProxyConfig {
 
     for pairs in pair.into_inner() {
         let pair = pairs.clone().into_inner();
+        let pair = pair.as_str().trim().trim_matches('"');
         match pairs.as_rule() {
-            Rule::listener => listener = pair.as_str().to_string(),
-            Rule::tls_certificate => tls_certificate = Some(pair.as_str().to_string()),
-            Rule::tls_certificate_key => tls_certificate_key = Some(pair.as_str().to_string()),
+            Rule::listener => listener = pair.to_string(),
+            Rule::tls_certificate => tls_certificate = Some(pair.to_string()),
+            Rule::tls_certificate_key => tls_certificate_key = Some(pair.to_string()),
             Rule::proxy_domain_base_config => {
                 let (key, host_config) = parse_proxy_domain_config(pairs);
                 servers.insert(key, host_config);
@@ -91,7 +92,16 @@ fn parse_proxy_domain_config(pair: pest::iterators::Pair<Rule>) -> (String, Prox
             Rule::domain_section => {
                 domain = pair.into_inner().next().unwrap().as_str().to_string();
             }
-            Rule::proxy_addr => proxy_addr = pair.as_str().to_string(),
+            Rule::proxy_addr => {
+                proxy_addr = pair
+                    .into_inner()
+                    .next()
+                    .unwrap()
+                    .as_str()
+                    .trim()
+                    .trim_matches('"')
+                    .to_string()
+            }
             Rule::proxy_tls => proxy_tls = pair.as_str() == "true",
             Rule::proxy_headers => {
                 proxy_headers = Some(parse_headers(pair));
@@ -128,7 +138,17 @@ fn parse_proxy_route_config(
             Rule::path_section => {
                 path = pair.into_inner().next().unwrap().as_str().to_string();
             }
-            Rule::proxy_addr => proxy_addr = Some(pair.as_str().to_string()),
+            Rule::proxy_addr => {
+                proxy_addr = Some(
+                    pair.into_inner()
+                        .next()
+                        .unwrap()
+                        .as_str()
+                        .trim()
+                        .trim_matches('"')
+                        .to_string(),
+                )
+            }
             Rule::proxy_tls => proxy_tls = pair.as_str() == "true",
             Rule::proxy_headers => {
                 proxy_headers = Some(parse_headers(pair));
@@ -158,7 +178,16 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
 
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::listener => listener = pair.as_str().to_string(),
+            Rule::listener => {
+                listener = pair
+                    .into_inner()
+                    .next()
+                    .unwrap()
+                    .as_str()
+                    .trim()
+                    .trim_matches('"')
+                    .to_string()
+            }
             Rule::upstreams => {
                 upstreams = pair
                     .into_inner()
