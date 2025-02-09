@@ -16,20 +16,18 @@ proxy_tls = false
 
 proxy_uds = true
 
-[[domain=example.net]]
-proxy_addr = "192.168.1.3"
+[[domain="example.net"]]
+proxy_addr = "127.0.0.1:9799"
 
 [proxy]
-listener = "0.0.0.0:8080"
-tls_certificate = "cert.pem"
-tls_certificate_key = "key.pem"
+listener = "0.0.0.0:443"
 
-[[domain=example.com]]
+[[domain="example.com"]]
 proxy_addr = "192.168.1.1"
 proxy_tls = true
 proxy_headers = [["Authorization": "Bearer token"]]
 
-[[[route=/api]]]
+[[[route="/bpi"]]]
 proxy_addr = "192.168.1.2"
 proxy_tls = false
 
