@@ -1,0 +1,15 @@
+name_char = { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" }
+value_char = { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" | "\"" | ":" }
+name = @{ name_char+ }
+value = @{ value_char* }
+proxy_section = { "[proxy]" }
+domain_section = { "[[" ~ name ~ "]]" }
+path_section = { "[[[" ~ name ~ "]]]" }
+property = { name ~"="~ value }
+WHITESPACE = _{ " " }
+
+file = {
+    SOI ~
+    ((property | main_section | domain_section | path_section)? ~ NEWLINE)* ~
+    EOI
+}
