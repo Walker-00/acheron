@@ -95,7 +95,7 @@ load_balancer_headers = [["X-Custom-Header: CustomValue"], ["Accept: */*"]]
 
 3. Use Acheron to configure Charon:
    ```bash
-   ./charon --config path/to/config.acheron
+   ./charon --config path/to/config.chr
    ```
 
 ## Community and Contributions
@@ -114,7 +114,7 @@ For any questions or feedback, reach out at [rissk_it@proton.me](mailto:rissk_it
 
 ### Acknowledgments
 
-- Built with ❤️ using Rust.
+- Built with ☕ using Rust.
 - Inspired by the need for clear and effective configuration in modern infrastructure.
 
 ---
