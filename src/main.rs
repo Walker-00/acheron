@@ -44,6 +44,24 @@ pub struct ProxyPathBaseHostConfig {
     pub proxy_uds: bool,
 }
 
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+struct LoadBalancerConfig {
+    listener: String,
+    upstreams: Vec<String>,
+    health_check: Option<bool>,
+    health_check_frequency: Option<u64>,
+    parallel_health_check: Option<bool>,
+    tls_certificate: Option<String>,
+    tls_certificate_key: Option<String>,
+    servers: HashMap<String, LBHostConfig>,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct LBHostConfig {
+    pub load_balancer_tls: bool,
+    pub load_balancer_headers: Option<Vec<(String, String)>>,
+}
+
 fn parse_proxy_config(input: &str) -> Result<Vec<ProxyConfig>, String> {
     let mut proxy_configs = Vec::new();
     let mut current_proxy_config: Option<ProxyConfig> = None;
