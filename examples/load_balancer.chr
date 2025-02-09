@@ -1,0 +1,12 @@
+[load_balancer]
+listener = "0.0.0.0:9091"
+upstreams = ["192.168.1.4:8000", "192.168.1.5:8000"]
+tls_certificate = "lb_cert.pem"
+tls_certificate_key = "lb_key.pem"
+health_check = true
+health_check_frequency = 30
+parallel_health_check = true
+
+[[domain=load-balancer.com]]
+load_balancer_tls = true
+load_balancer_headers = [["X-Custom-Header: CustomValue"], ["Accept: */*"]]
