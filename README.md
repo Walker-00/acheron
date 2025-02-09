@@ -15,26 +15,56 @@ Acheron is a configuration language designed for Charon, a high-performance prox
 Here’s a sample Acheron configuration file to showcase its simplicity and power:
 
 ```acheron
-[proxy]
-listener = "127.0.0.1:8080"
-tls_certificate = "path/to/cert"
-tls_certificate_key = "path/to/key"
+prometheus_addr = "127.0.0.1:9090"
 
-[["example.com"]]
-proxy_addr = "10.0.0.1"
+[proxy]
+listener = "0.0.0.0:8080"
+tls_certificate = "cert.pem"
+tls_certificate_key = "key.pem"
+
+[[domain=example.com]]
+proxy_addr = "192.168.1.1"
 proxy_tls = true
-proxy_headers = [["X-Custom-Header": "Value"]]
+proxy_headers = [["Authorization": "Bearer token"]]
+
+[[[route=/api]]]
+proxy_addr = "192.168.1.2"
+proxy_tls = false
+
+proxy_uds = true
+
+[[domain="example.net"]]
+proxy_addr = "127.0.0.1:9799"
+
+[proxy]
+listener = "0.0.0.0:443"
+
+[[domain="example.com"]]
+proxy_addr = "192.168.1.1"
+proxy_tls = true
+proxy_headers = [["Authorization": "Bearer token"]]
+
+[[[route="/bpi"]]]
+proxy_addr = "192.168.1.2"
+proxy_tls = false
+
+proxy_uds = true
+
+[[domain=example.net]]
+proxy_addr = "192.168.1.3"
 
 [load_balancer]
-listener = "127.0.0.1:9090"
-upstreams = "10.0.0.1,10.0.0.2"
+listener = "0.0.0.0:9091"
+upstreams = ["192.168.1.4:8000", "192.168.1.5:8000"]
+tls_certificate = "lb_cert.pem"
+tls_certificate_key = "lb_key.pem"
 health_check = true
 health_check_frequency = 30
-parallel_health_check = false
+parallel_health_check = true
 
-[["domain1.com"]]
+[[domain=load-balancer.com]]
 load_balancer_tls = true
-load_balancer_headers = [["Header1": "Value1"]]
+load_balancer_headers = [["X-Custom-Header: CustomValue"], ["Accept: */*"]]
 ```
 
 ## Format Highlights
