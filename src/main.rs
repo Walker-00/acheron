@@ -228,20 +228,26 @@ fn parse_headers(pair: pest::iterators::Pair<Rule>) -> Vec<(String, String)> {
 
 fn main() {
     let input = std::fs::read_to_string("config.chr").unwrap();
-    let parsed = ConfigParser::parse(Rule::file, &input).expect("Failed to parse input");
+    let parsed = ConfigParser::parse(Rule::file, &input)
+        .expect("Failed to parse input")
+        .next()
+        .unwrap();
 
-    for pair in parsed {
-        println!("{pair}");
+    for pair in parsed.into_inner() {
         match pair.as_rule() {
             Rule::main_proxy_config => {
+                println!("{pair}");
                 let proxy_config = parse_proxy_config(pair);
                 println!("{:#?}", proxy_config);
             }
             Rule::main_lb_config => {
+                println!("{pair}");
                 let load_balancer_config = parse_load_balancer_config(pair);
                 println!("{:#?}", load_balancer_config);
             }
-            _ => {}
+            _ => {
+                println!("No Match {pair}");
+            }
         }
     }
 }
