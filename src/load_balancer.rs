@@ -171,12 +171,17 @@ fn parse_headers(input: &str) -> Result<Vec<(String, String)>, String> {
 pub fn main6() {
     let input = r#"
 [load_balancer]
+listener = "0.0.0.0:9090"
 upstreams = "127.0.0.1:8080,127.0.0.1:8081"
 health_check = true
 health_check_frequency = 30
 parallel_health_check = 5
 tls_certificate = "path/to/lb-cert.pem"
 tls_certificate_key = "path/to/lb-key.pem"
+
+[[lb.example.com]]
+load_balancer_tls = true
+load_balancer_headers = ["X-Forwarded-For: 127.0.0.1", "X-Real-IP: 192.168.1.1"]
 
 "#;
 
