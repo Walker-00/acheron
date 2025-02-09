@@ -56,13 +56,14 @@ fn parse_proxy_config(pair: pest::iterators::Pair<Rule>) -> ProxyConfig {
     let mut tls_certificate_key = None;
     let mut servers = HashMap::new();
 
-    for pair in pair.into_inner() {
-        match pair.as_rule() {
+    for pairs in pair.into_inner() {
+        let pair = pairs.clone().into_inner();
+        match pairs.as_rule() {
             Rule::listener => listener = pair.as_str().to_string(),
             Rule::tls_certificate => tls_certificate = Some(pair.as_str().to_string()),
             Rule::tls_certificate_key => tls_certificate_key = Some(pair.as_str().to_string()),
             Rule::proxy_domain_base_config => {
-                let (key, host_config) = parse_proxy_domain_config(pair);
+                let (key, host_config) = parse_proxy_domain_config(pairs);
                 servers.insert(key, host_config);
             }
             _ => {}
@@ -155,11 +156,12 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
     let mut tls_certificate_key = None;
     let mut servers = HashMap::new();
 
-    for pair in pair.into_inner() {
-        match pair.as_rule() {
+    for pairs in pair.into_inner() {
+        let pair = pairs.clone().into_inner();
+        match pairs.as_rule() {
             Rule::listener => listener = pair.as_str().to_string(),
             Rule::upstreams => {
-                upstreams = pair
+                upstreams = pairs
                     .into_inner()
                     .map(|inner_pair| inner_pair.as_str().to_string())
                     .collect();
@@ -170,7 +172,7 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
             }
             Rule::parallel_health_check => parallel_health_check = Some(pair.as_str() == "true"),
             Rule::lb_domain_base_config => {
-                let (key, host_config) = parse_lb_host_config(pair);
+                let (key, host_config) = parse_lb_host_config(pairs);
                 servers.insert(key, host_config);
             }
             Rule::tls_certificate => tls_certificate = Some(pair.as_str().to_string()),
@@ -216,12 +218,20 @@ fn parse_lb_host_config(pair: pest::iterators::Pair<Rule>) -> (String, LBHostCon
 }
 
 fn parse_headers(pair: pest::iterators::Pair<Rule>) -> Vec<(String, String)> {
+    println!("{}", pair.clone().into_inner());
     pair.into_inner()
         .map(|header_pair| {
+            println!("{header_pair}");
             let mut inner = header_pair.into_inner();
-            let key = inner.next().unwrap().as_str().to_string();
-            let value = inner.next().unwrap().as_str().to_string();
-            (key, value)
+            println!("inner: {inner}");
+            let bind = inner.next().unwrap().as_str().to_string();
+            println!("{bind}");
+            let key = bind
+                .split(':')
+                .map(|x| x.trim().trim_matches(' ').trim_matches('"'))
+                .collect::<Vec<&str>>();
+            println!("{key:?}");
+            (key[0].to_string(), key[1].to_string())
         })
         .collect()
 }
@@ -236,12 +246,10 @@ fn main() {
     for pair in parsed.into_inner() {
         match pair.as_rule() {
             Rule::main_proxy_config => {
-                println!("{pair}");
                 let proxy_config = parse_proxy_config(pair);
                 println!("{:#?}", proxy_config);
             }
             Rule::main_lb_config => {
-                println!("{pair}");
                 let load_balancer_config = parse_load_balancer_config(pair);
                 println!("{:#?}", load_balancer_config);
             }
