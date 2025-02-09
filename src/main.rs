@@ -189,10 +189,21 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
                     .to_string()
             }
             Rule::upstreams => {
+                println!("{}", pair.clone().into_inner().next().unwrap().as_str());
                 upstreams = pair
                     .into_inner()
-                    .map(|inner_pair| inner_pair.as_str().trim().trim_matches('"').to_string())
-                    .collect();
+                    .next()
+                    .unwrap()
+                    .as_str()
+                    .split(',')
+                    .map(|x| {
+                        x.trim()
+                            .trim_matches('[')
+                            .trim_matches(']')
+                            .trim_matches('"')
+                            .to_string()
+                    })
+                    .collect::<Vec<String>>()
             }
             Rule::health_check => health_check = Some(pair.as_str() == "true"),
             Rule::health_check_frequency => {
@@ -205,7 +216,17 @@ fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancer
                 let (key, host_config) = parse_lb_host_config(pair);
                 servers.insert(key, host_config);
             }
-            Rule::tls_certificate => tls_certificate = Some(pair.as_str().to_string()),
+            Rule::tls_certificate => {
+                tls_certificate = Some(
+                    pair.into_inner()
+                        .next()
+                        .unwrap()
+                        .as_str()
+                        .trim()
+                        .trim_matches('"')
+                        .to_string(),
+                )
+            }
             Rule::tls_certificate_key => tls_certificate_key = Some(pair.as_str().to_string()),
             _ => {}
         }
