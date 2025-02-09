@@ -7,6 +7,13 @@ use std::collections::HashMap;
 #[grammar = "done.pest"] // This is the path to your .pest file
 pub struct ConfigParser;
 
+#[derive(Serialize, Deserialize, Default)]
+struct Config {
+    prometheus_addr: Option<String>,
+    proxy: Option<Vec<ProxyConfig>>,
+    load_balancer: Option<Vec<LoadBalancerConfig>>,
+}
+
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 struct ProxyConfig {
     listener: String,
@@ -298,16 +305,33 @@ fn main() {
         .expect("Failed to parse input")
         .next()
         .unwrap();
+    let mut proxy_configs = vec![];
+    let mut lb_configs = vec![];
+    let mut prometheus_addr = None;
+    let mut config = Config::default();
 
     for pair in parsed.into_inner() {
         match pair.as_rule() {
+            Rule::prometheus_addr => {
+                prometheus_addr = Some(
+                    pair.into_inner()
+                        .next()
+                        .unwrap()
+                        .as_str()
+                        .trim()
+                        .trim_matches('"'),
+                );
+            }
             Rule::main_proxy_config => {
                 let proxy_config = parse_proxy_config(pair);
-                println!("{:#?}", proxy_config);
+                proxy_configs.push(proxy_config);
             }
             Rule::main_lb_config => {
                 let load_balancer_config = parse_load_balancer_config(pair);
-                println!("{:#?}", load_balancer_config);
+                lb_configs.push(load_balancer_config);
+            }
+            Rule::EOI => {
+                config.prometheus_addr = prometheus_addr;
             }
             _ => {
                 println!("No Match {pair}");
