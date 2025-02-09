@@ -215,6 +215,17 @@ fn parse_lb_host_config(pair: pest::iterators::Pair<Rule>) -> (String, LBHostCon
     })
 }
 
+fn parse_headers(pair: pest::iterators::Pair<Rule>) -> Vec<(String, String)> {
+    pair.into_inner()
+        .map(|header_pair| {
+            let mut inner = header_pair.into_inner();
+            let key = inner.next().unwrap().as_str().to_string();
+            let value = inner.next().unwrap().as_str().to_string();
+            (key, value)
+        })
+        .collect()
+}
+
 fn main() {
     let input = std::fs::read_to_string("config.txt").unwrap();
     let parsed = ConfigParser::parse(Rule::file, &input).expect("Failed to parse input");
