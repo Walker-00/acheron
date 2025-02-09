@@ -1,0 +1,19 @@
+// Pest grammar file: proxy_config.pest
+// Define this grammar in a file called proxy_config.pest
+
+// Grammar rules
+document      = { SOI ~ proxy_section* ~ EOI }
+proxy_section = { proxy_header ~ (domain_section* ~ route_section*)* }
+proxy_header  = { "[proxy]" ~ key_value* }
+domain_section = { "[[" ~ string ~ "]]" ~ key_value* }
+route_section = { "[[[" ~ string ~ "]]]" ~ key_value* }
+key_value     = { key ~ "=" ~ value }
+key           = { ASCII_ALPHANUMERIC+ }
+value         = { (!NEWLINE ~ ANY)+ }
+string        = { QUOTED_STRING }
+
+// Whitespace
+WHITESPACE    = _{ " " | "\t" }
+COMMENT       = _{ "#" ~ (!NEWLINE ~ ANY)* }
+NEWLINE       = _{ "\n" | "\r\n" }
+QUOTED_STRING = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
