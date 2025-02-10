@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="https://github.com/user-attachments/assets/f77ae492-071e-460d-9c43-d28305d12da6" width="350" height="350" alt="Acheron" />
+
+</div>
+
 # Acheron Configuration Language
 
 Acheron is a configuration language designed for Charon, a high-performance proxy server written in Rust. It provides an intuitive and human-readable format, making it easy to configure complex setups with minimal effort. Whether you're managing proxy configurations, load balancing, or routing rules, Acheron simplifies the process with clarity and precision.
