@@ -19,6 +19,7 @@ Acheron is a configuration language designed for Charon, a high-performance prox
 ## Configuration Example
 
 For more example look in [example](https://github.com/Walker-00/acheron/tree/rust/examples)
+
 Here’s a sample Acheron configuration file to showcase its simplicity and power:
 
 ```acheron
