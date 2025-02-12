@@ -3,6 +3,8 @@ use pest_derive::Parser;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+mod structures;
+
 #[derive(Parser)]
 #[grammar = "done.pest"]
 pub struct ConfigParser;
