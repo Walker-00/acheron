@@ -1,7 +1,7 @@
 use pest::Parser;
 use pest_derive::Parser;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use structures::proxy_structure::{ProxyConfig, ProxyHostConfig, ProxyPathBaseHostConfig};
 
 mod structures;
 
@@ -78,8 +78,8 @@ fn parse_proxy_domain_config(pair: pest::iterators::Pair<Rule>) -> (String, Prox
         proxy_addr,
         proxy_tls,
         proxy_headers,
-        proxy_uds,
-        routes,
+        proxy_uds: Some(proxy_uds),
+        routes: Some(routes),
     })
 }
 
