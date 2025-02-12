@@ -280,9 +280,12 @@ fn parse_headers(pair: pest::iterators::Pair<Rule>) -> Vec<(String, String)> {
 fn main() {
     let input = std::fs::read_to_string("config.chr").unwrap();
     let parsed = ConfigParser::parse(Rule::file, &input)
-        .expect("Failed to parse input")
+        .map_err(|e| AcheronError::ParseError(format!("Failed to parse input: {}", e)))?
         .next()
-        .unwrap();
+        .ok_or_else(|| {
+            AcheronError::ParseError("No root pair found in the parsed input.".to_string())
+        })?;
+
     let mut config = Config::default();
 
     for pair in parsed.into_inner() {
@@ -291,7 +294,11 @@ fn main() {
                 config.prometheus_addr = Some(
                     pair.into_inner()
                         .next()
-                        .unwrap()
+                        .ok_or_else(|| {
+                            AcheronError::ValidationError(
+                                "Missing prometheus_addr value.".to_string(),
+                            )
+                        })?
                         .as_str()
                         .trim()
                         .trim_matches('"')
@@ -300,28 +307,28 @@ fn main() {
             }
             Rule::main_proxy_config => {
                 let proxy_config = parse_proxy_config(pair);
-
-                if let Some(ref mut proxy_configs) = config.proxy {
-                    proxy_configs.push(proxy_config);
-                } else {
-                    config.proxy = Some(vec![proxy_config]);
-                }
+                config.proxy.get_or_insert_with(Vec::new).push(proxy_config);
             }
             Rule::main_lb_config => {
                 let load_balancer_config = parse_load_balancer_config(pair);
-
-                if let Some(ref mut lb_configs) = config.load_balancer {
-                    lb_configs.push(load_balancer_config);
-                } else {
-                    config.load_balancer = Some(vec![load_balancer_config])
-                }
+                config
+                    .load_balancer
+                    .get_or_insert_with(Vec::new)
+                    .push(load_balancer_config);
             }
             Rule::EOI => {
-                println!("{config:#?}");
+                println!("{:#?}", config);
             }
             _ => {
-                println!("No Match {pair}");
+                return Err(AcheronError::ParseError(format!(
+                    "Unexpected rule: {:?}",
+                    pair.as_rule()
+                )));
             }
         }
     }
+
+    Err(AcheronError::ParseError(
+        "Unexpected end of input.".to_string(),
+    ))
 }
