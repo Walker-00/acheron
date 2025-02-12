@@ -333,4 +333,6 @@ fn acheron() -> Result<Config, AcheronError> {
     ))
 }
 
-fn main() {}
+fn main() {
+    acheron().unwrap();
+}
