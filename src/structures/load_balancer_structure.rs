@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct LoadBalancerConfig {
     pub listener: String,
     pub upstreams: Vec<String>,
@@ -14,7 +14,7 @@ pub struct LoadBalancerConfig {
     pub servers: HashMap<String, LBHostConfig>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct LBHostConfig {
     pub load_balancer_tls: bool,
     pub load_balancer_headers: Option<Vec<(String, String)>>,
