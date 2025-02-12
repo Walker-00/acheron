@@ -277,7 +277,7 @@ fn parse_headers(pair: pest::iterators::Pair<Rule>) -> Vec<(String, String)> {
         .collect()
 }
 
-fn main() {
+fn acheron() -> Result<Config, AcheronError> {
     let input = std::fs::read_to_string("config.chr").unwrap();
     let parsed = ConfigParser::parse(Rule::file, &input)
         .map_err(|e| AcheronError::ParseError(format!("Failed to parse input: {}", e)))?
@@ -317,7 +317,7 @@ fn main() {
                     .push(load_balancer_config);
             }
             Rule::EOI => {
-                println!("{:#?}", config);
+                return Ok(config);
             }
             _ => {
                 return Err(AcheronError::ParseError(format!(
@@ -332,3 +332,5 @@ fn main() {
         "Unexpected end of input.".to_string(),
     ))
 }
+
+fn main() {}
