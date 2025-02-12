@@ -9,56 +9,6 @@ mod structures;
 #[grammar = "done.pest"]
 pub struct ConfigParser;
 
-#[derive(Serialize, Deserialize, Default, Debug)]
-struct Config {
-    prometheus_addr: Option<String>,
-    proxy: Option<Vec<ProxyConfig>>,
-    load_balancer: Option<Vec<LoadBalancerConfig>>,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-struct ProxyConfig {
-    listener: String,
-    tls_certificate: Option<String>,
-    tls_certificate_key: Option<String>,
-    servers: HashMap<String, ProxyHostConfig>,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ProxyHostConfig {
-    pub proxy_addr: String,
-    pub proxy_tls: bool,
-    pub proxy_headers: Option<Vec<(String, String)>>,
-    pub proxy_uds: bool,
-    pub routes: HashMap<String, ProxyPathBaseHostConfig>,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ProxyPathBaseHostConfig {
-    pub proxy_addr: Option<String>,
-    pub proxy_tls: bool,
-    pub proxy_headers: Option<Vec<(String, String)>>,
-    pub proxy_uds: bool,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-struct LoadBalancerConfig {
-    listener: String,
-    upstreams: Vec<String>,
-    health_check: Option<bool>,
-    health_check_frequency: Option<u64>,
-    parallel_health_check: Option<bool>,
-    tls_certificate: Option<String>,
-    tls_certificate_key: Option<String>,
-    servers: HashMap<String, LBHostConfig>,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct LBHostConfig {
-    pub load_balancer_tls: bool,
-    pub load_balancer_headers: Option<Vec<(String, String)>>,
-}
-
 fn parse_proxy_config(pair: pest::iterators::Pair<Rule>) -> ProxyConfig {
     let mut listener = String::new();
     let mut tls_certificate = None;
