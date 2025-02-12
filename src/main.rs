@@ -2,7 +2,8 @@ use pest::Parser;
 use pest_derive::Parser;
 use std::collections::HashMap;
 use structures::{
-    load_balancer_structure::LoadBalancerConfig,
+    general::Config,
+    load_balancer_structure::{LBHostConfig, LoadBalancerConfig},
     proxy_structure::{ProxyConfig, ProxyHostConfig, ProxyPathBaseHostConfig},
 };
 
