@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct ProxyConfig {
     pub listener: String,
     pub tls_certificate: Option<String>,
@@ -10,7 +10,7 @@ pub struct ProxyConfig {
     pub servers: HashMap<String, ProxyHostConfig>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct ProxyHostConfig {
     pub proxy_addr: String,
     pub proxy_tls: bool,
@@ -19,7 +19,7 @@ pub struct ProxyHostConfig {
     pub routes: Option<HashMap<String, ProxyPathBaseHostConfig>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct ProxyPathBaseHostConfig {
     pub proxy_addr: Option<String>,
     pub proxy_tls: Option<bool>,
