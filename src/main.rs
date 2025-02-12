@@ -1,6 +1,6 @@
 use pest::Parser;
 use pest_derive::Parser;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 use structures::{
     general::Config,
     load_balancer_structure::{LBHostConfig, LoadBalancerConfig},
@@ -12,6 +12,29 @@ mod structures;
 #[derive(Parser)]
 #[grammar = "done.pest"]
 pub struct ConfigParser;
+
+#[derive(Debug)]
+pub enum AcheronError {
+    IoError(std::io::Error),
+    ParseError(String),
+    ValidationError(String),
+}
+
+impl fmt::Display for AcheronError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AcheronError::IoError(err) => write!(f, "I/O Error: {}", err),
+            AcheronError::ParseError(err) => write!(f, "Parsing Error: {}", err),
+            AcheronError::ValidationError(err) => write!(f, "Validation Error: {}", err),
+        }
+    }
+}
+
+impl From<std::io::Error> for AcheronError {
+    fn from(err: std::io::Error) -> Self {
+        AcheronError::IoError(err)
+    }
+}
 
 fn parse_proxy_config(pair: pest::iterators::Pair<Rule>) -> ProxyConfig {
     let mut listener = String::new();
