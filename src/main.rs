@@ -1,7 +1,10 @@
 use pest::Parser;
 use pest_derive::Parser;
 use std::collections::HashMap;
-use structures::proxy_structure::{ProxyConfig, ProxyHostConfig, ProxyPathBaseHostConfig};
+use structures::{
+    load_balancer_structure::LoadBalancerConfig,
+    proxy_structure::{ProxyConfig, ProxyHostConfig, ProxyPathBaseHostConfig},
+};
 
 mod structures;
 
@@ -119,9 +122,9 @@ fn parse_proxy_route_config(
 
     (path, ProxyPathBaseHostConfig {
         proxy_addr,
-        proxy_tls,
+        proxy_tls: Some(proxy_tls),
         proxy_headers,
-        proxy_uds,
+        proxy_uds: Some(proxy_uds),
     })
 }
 
