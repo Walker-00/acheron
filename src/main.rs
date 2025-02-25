@@ -7,6 +7,7 @@ use structures::{
     proxy_structure::{ProxyConfig, ProxyHostConfig, ProxyPathBaseHostConfig},
 };
 
+mod nom_parser_impl;
 mod structures;
 
 #[derive(Parser)]
@@ -101,13 +102,16 @@ fn parse_proxy_domain_config(pair: pest::iterators::Pair<Rule>) -> (String, Prox
         }
     }
 
-    (domain, ProxyHostConfig {
-        proxy_addr,
-        proxy_tls,
-        proxy_headers,
-        proxy_uds: Some(proxy_uds),
-        routes: Some(routes),
-    })
+    (
+        domain,
+        ProxyHostConfig {
+            proxy_addr,
+            proxy_tls,
+            proxy_headers,
+            proxy_uds: Some(proxy_uds),
+            routes: Some(routes),
+        },
+    )
 }
 
 fn parse_proxy_route_config(
@@ -144,12 +148,15 @@ fn parse_proxy_route_config(
         }
     }
 
-    (path, ProxyPathBaseHostConfig {
-        proxy_addr,
-        proxy_tls: Some(proxy_tls),
-        proxy_headers,
-        proxy_uds: Some(proxy_uds),
-    })
+    (
+        path,
+        ProxyPathBaseHostConfig {
+            proxy_addr,
+            proxy_tls: Some(proxy_tls),
+            proxy_headers,
+            proxy_uds: Some(proxy_uds),
+        },
+    )
 }
 
 fn parse_load_balancer_config(pair: pest::iterators::Pair<Rule>) -> LoadBalancerConfig {
@@ -257,10 +264,13 @@ fn parse_lb_host_config(pair: pest::iterators::Pair<Rule>) -> (String, LBHostCon
         }
     }
 
-    (domain, LBHostConfig {
-        load_balancer_tls,
-        load_balancer_headers,
-    })
+    (
+        domain,
+        LBHostConfig {
+            load_balancer_tls,
+            load_balancer_headers,
+        },
+    )
 }
 
 fn parse_headers(pair: pest::iterators::Pair<Rule>) -> Vec<(String, String)> {
