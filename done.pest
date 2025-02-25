@@ -1,4 +1,3 @@
-
 name_char             =  { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" }
 value_char            =  { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" | "\"" | ":" | " " }
 name                  = @{ name_char+ }
@@ -55,4 +54,3 @@ proxy_route_base_config  = { path_section ~ proxy_route_config }
 
 main_lb_config        = { load_balancer_section ~ lb_main_config ~ lb_domain_base_config? }
 lb_domain_base_config = { domain_section ~ load_balancer_tls? ~ load_balancer_headers? }
-
