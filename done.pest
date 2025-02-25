@@ -34,10 +34,16 @@ parallel_health_check  = { "parallel_health_check" ~ "=" ~ bool }
 load_balancer_tls      = { "load_balancer_tls" ~ "=" ~ bool }
 load_balancer_headers  = { "load_balancer_headers" ~ "=" ~ headers }
 
-proxy_route_config  = _{ proxy_addr? ~ proxy_tls? ~ proxy_headers? ~ proxy_uds? }
-proxy_domain_config = _{ proxy_addr ~ proxy_tls? ~ proxy_headers? ~ proxy_uds? }
-proxy_main_config   = _{ listener ~ (tls_certificate ~ tls_certificate_key)? }
-lb_main_config      = _{ listener ~ upstreams ~ (tls_certificate ~ tls_certificate_key)? ~ (health_check ~ health_check_frequency ~ parallel_health_check?)? }
+proxy_route_item  = { proxy_addr | proxy_tls | proxy_headers | proxy_uds }
+proxy_route_config = _{ proxy_route_item* }
+proxy_domain_config = _{ ( proxy_addr | proxy_tls | proxy_headers | proxy_uds )+ }
+
+proxy_main_item = { listener | (tls_certificate ~ tls_certificate_key) }
+proxy_main_config = _{ proxy_main_item+ } 
+
+lb_main_item = { listener | upstreams | (tls_certificate ~ tls_certificate_key) | (health_check ~ health_check_frequency ~ parallel_health_check?) }
+lb_main_config = _{ lb_main_item+ }
+
 
 file = {
     SOI ~ (prometheus_addr? ~ ((main_proxy_config+ | main_lb_config+) | (main_proxy_config+) | (main_lb_config+)))* ~ EOI
