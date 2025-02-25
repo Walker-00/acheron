@@ -1,0 +1,52 @@
+name_char             =  { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" }
+value_char            =  { ASCII_ALPHANUMERIC | "." | "_" | "/" | "-" | "\"" | ":" | " " }
+name                  = @{ name_char+ }
+value                 = @{ value_char+ }
+proxy_section         =  { "[" ~ "proxy" ~ "]" }
+load_balancer_section =  { "[" ~ "load_balancer" ~ "]" }
+domain_section        =  { "[[" ~ ("domain" | "host" | "ip") ~ "=" ~ value ~ "]]" }
+path_section          =  { "[[[" ~ ("route" | "path") ~ "=" ~ value ~ "]]]" }
+variable              =  { name ~ "=" ~ value }
+variables             =  { variable* }
+WHITESPACE            = _{ " " | "\t" | "\n" }
+
+header_name_char =  { ASCII_ALPHANUMERIC | "_" | "-" | " " | "\"" | "." | "/" | "*" }
+header_key       = @{ "\"" ~ header_name_char+ ~ "\"" | header_name_char+ }
+header           =  { header_key ~ (":" | ",") ~ header_key }
+headers          =  { "[" ~ "[" ~ header ~ "]" ~ ("," ~ "[" ~ header ~ "]")* ~ "]" }
+vector_name_char =  { ASCII_ALPHANUMERIC | "_" | "-" | " " | "\"" | "." | ":" }
+vector_key       = @{ "\"" ~ vector_name_char+ ~ "\"" | vector_name_char+ }
+vector           =  { "[" ~ vector_key ~ ("," ~ vector_key)* ~ "]" }
+
+bool                   = { "true" | "false" }
+prometheus_addr        = { "prometheus_addr" ~ "=" ~ value }
+listener               = { "listener" ~ "=" ~ value }
+proxy_addr             = { "proxy_addr" ~ "=" ~ value }
+proxy_tls              = { "proxy_tls" ~ "=" ~ bool }
+proxy_uds              = { "proxy_uds" ~ "=" ~ bool }
+proxy_headers          = { "proxy_headers" ~ "=" ~ headers }
+tls_certificate        = { "tls_certificate" ~ "=" ~ value }
+tls_certificate_key    = { "tls_certificate_key" ~ "=" ~ value }
+upstreams              = { "upstreams" ~ "=" ~ vector }
+health_check           = { "health_check" ~ "=" ~ bool }
+health_check_frequency = { "health_check_frequency" ~ "=" ~ ASCII_DIGIT+ }
+parallel_health_check  = { "parallel_health_check" ~ "=" ~ bool }
+load_balancer_tls      = { "load_balancer_tls" ~ "=" ~ bool }
+load_balancer_headers  = { "load_balancer_headers" ~ "=" ~ headers }
+
+proxy_route_config  = _{ proxy_addr? ~ proxy_tls? ~ proxy_headers? ~ proxy_uds? }
+proxy_domain_config = _{ proxy_addr ~ proxy_tls? ~ proxy_headers? ~ proxy_uds? }
+proxy_main_config   = _{ listener ~ (tls_certificate ~ tls_certificate_key)? }
+lb_main_config      = _{ listener ~ upstreams ~ (tls_certificate ~ tls_certificate_key)? ~ (health_check ~ health_check_frequency ~ parallel_health_check?)? }
+
+file = {
+    SOI ~ (prometheus_addr? ~ ((main_proxy_config+ | main_lb_config+) | (main_proxy_config+) | (main_lb_config+)))* ~ EOI
+}
+
+main_proxy_config        = { proxy_section ~ proxy_main_config ~ proxy_domain_base_config+ }
+proxy_domain_base_config = { domain_section ~ proxy_domain_config ~ proxy_route_base_config? }
+proxy_route_base_config  = { path_section ~ proxy_route_config }
+
+main_lb_config        = { load_balancer_section ~ lb_main_config ~ lb_domain_base_config? }
+lb_domain_base_config = { domain_section ~ load_balancer_tls? ~ load_balancer_headers? }
+
