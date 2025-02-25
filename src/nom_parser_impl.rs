@@ -219,7 +219,7 @@ fn parse_load_balancer_tls(input: &str) -> IResult<&str, bool> {
     .parse(input)
 }
 
-// New: parse proxy_headers using the key "proxy_headers"
+// New: parse proxy_headers (consume key and equals)
 fn parse_proxy_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
     preceded(
         tuple((space0, tag("proxy_headers"), space0, char('='), space0)),
@@ -228,7 +228,7 @@ fn parse_proxy_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
     .parse(input)
 }
 
-// New: parse load_balancer_headers using the key "load_balancer_headers"
+// New: parse load_balancer_headers (consume key and equals)
 fn parse_lb_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
     preceded(
         tuple((
@@ -246,6 +246,7 @@ fn parse_lb_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
 //
 // Parsers for headers
 //
+
 // A header key is either a quoted string or a name.
 fn parse_header_key(input: &str) -> IResult<&str, &str> {
     alt((delimited(char('"'), is_not("\""), char('"')), parse_name)).parse(input)
@@ -275,6 +276,8 @@ fn parse_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
 //
 
 fn parse_proxy_section(input: &str) -> IResult<&str, ()> {
+    // Skip any leading whitespace.
+    let (input, _) = multispace0.parse(input)?;
     let (input, _) = delimited(
         space0,
         delimited(char('['), tag("proxy"), char(']')),
@@ -285,6 +288,8 @@ fn parse_proxy_section(input: &str) -> IResult<&str, ()> {
 }
 
 fn parse_load_balancer_section(input: &str) -> IResult<&str, ()> {
+    // Skip any leading whitespace.
+    let (input, _) = multispace0.parse(input)?;
     let (input, _) = delimited(
         space0,
         delimited(char('['), tag("load_balancer"), char(']')),
@@ -318,7 +323,7 @@ fn parse_path_section(input: &str) -> IResult<&str, &str> {
 // Parsers for proxy configuration
 //
 
-// Parse a proxy route configuration (typically for routes in a path section)
+// Parse a proxy route configuration (for routes within a path section)
 fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfig> {
     let mut proxy_path = ProxyPathBaseHostConfig::default();
     let mut input = input;
@@ -327,7 +332,7 @@ fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfi
     if let Ok((i, _)) = parse_path_section.parse(input) {
         input = i;
     }
-    // Now, try to parse any proxy route items.
+    // Now, repeatedly try to parse proxy route items.
     let mut done = false;
     while !done {
         let res = alt((
@@ -342,9 +347,7 @@ fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfi
         ))
         .parse(input);
         match res {
-            Ok((i, _)) => {
-                input = i;
-            }
+            Ok((i, _)) => input = i,
             Err(_) => {
                 done = true;
             }
@@ -353,8 +356,7 @@ fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfi
     Ok((input, proxy_path))
 }
 
-// Parse one proxy domain configuration block:
-// [[ domain = value ]] followed by one or more proxy items
+// Parse one proxy domain configuration block: [[ domain = value ]] then proxy items.
 fn parse_proxy_domain_config(input: &str) -> IResult<&str, (String, ProxyHostConfig)> {
     let (input, domain) = parse_domain_section.parse(input)?;
     let mut host = ProxyHostConfig::default();
@@ -377,15 +379,13 @@ fn parse_proxy_domain_config(input: &str) -> IResult<&str, (String, ProxyHostCon
         ))
         .parse(input);
         match res {
-            Ok((i, _)) => {
-                input = i;
-            }
+            Ok((i, _)) => input = i,
             Err(_) => {
                 done = true;
             }
         }
     }
-    // Optionally, parse route configuration for this domain.
+    // Optionally, parse a route configuration for this domain.
     if let Ok((i, route)) = parse_proxy_route_config.parse(input) {
         let mut routes = HashMap::new();
         routes.insert(
@@ -437,7 +437,7 @@ fn parse_proxy_config(input: &str) -> IResult<&str, ProxyConfig> {
 //
 
 // Parse one load balancer domain configuration block.
-// This expects [[ domain = value ]] then optional tls and headers.
+// Expects: [[ domain = value ]] then optional tls and headers.
 fn parse_lb_domain_config(input: &str) -> IResult<&str, (String, LBHostConfig)> {
     let (input, domain) = parse_domain_section.parse(input)?;
     let mut host = LBHostConfig::default();
@@ -564,7 +564,7 @@ mod tests {
         [proxy]
         listener = 0.0.0.0:8080
         tls_certificate = /path/to/cert
-        tls_certificate_key = /path/to/key
+        tls_certificate_key = /path/to/cert_key
         [[domain = example.com]]
         proxy_addr = 192.168.1.1:80
         proxy_tls = true
@@ -578,7 +578,7 @@ mod tests {
         );
         assert_eq!(
             proxy_cfg.tls_certificate_key.unwrap(),
-            "/path/to/key".to_string()
+            "/path/to/cert_key".to_string()
         );
         let host_cfg = proxy_cfg.servers.get("example.com").unwrap();
         assert_eq!(host_cfg.proxy_addr, "192.168.1.1:80");
@@ -597,7 +597,7 @@ mod tests {
         listener = 0.0.0.0:9090
         upstreams = [backend1, backend2]
         tls_certificate = /path/to/lb/cert
-        tls_certificate_key = /path/to/lb/key
+        tls_certificate_key = /path/to/lb/cert_key
         health_check = true
         health_check_frequency = 30
         parallel_health_check = false
@@ -617,7 +617,7 @@ mod tests {
         );
         assert_eq!(
             lb_cfg.tls_certificate_key.unwrap(),
-            "/path/to/lb/key".to_string()
+            "/path/to/lb/cert_key".to_string()
         );
         assert_eq!(lb_cfg.health_check, Some(true));
         assert_eq!(lb_cfg.health_check_frequency, Some(30));
@@ -639,7 +639,7 @@ mod tests {
         [proxy]
         listener = 0.0.0.0:8080
         tls_certificate = /path/to/cert
-        tls_certificate_key = /path/to/key
+        tls_certificate_key = /path/to/cert_key
         [[domain = example.com]]
         proxy_addr = 192.168.1.1:80
         proxy_tls = false
