@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 //
-// Assume these structs come from your modules
+// Data structures (normally imported from your modules)
 //
 #[derive(Debug, Default, PartialEq)]
 pub struct Config {
@@ -92,16 +92,15 @@ fn parse_bool(input: &str) -> IResult<&str, bool> {
     alt((map(tag("true"), |_| true), map(tag("false"), |_| false))).parse(input)
 }
 
-// Parse an unsigned integer (for health_check_frequency)
+// Parse an unsigned integer
 fn parse_u64(input: &str) -> IResult<&str, u64> {
     map_res(digit1, FromStr::from_str).parse(input)
 }
 
 //
-// Key-value parsers
+// Parsers for key=value items
 //
 
-// listener = value
 fn parse_listener(input: &str) -> IResult<&str, &str> {
     preceded(
         tuple((space0, tag("listener"), space0, char('='), space0)),
@@ -110,7 +109,6 @@ fn parse_listener(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 
-// tls_certificate = value
 fn parse_tls_certificate(input: &str) -> IResult<&str, &str> {
     preceded(
         tuple((space0, tag("tls_certificate"), space0, char('='), space0)),
@@ -119,7 +117,6 @@ fn parse_tls_certificate(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 
-// tls_certificate_key = value
 fn parse_tls_certificate_key(input: &str) -> IResult<&str, &str> {
     preceded(
         tuple((
@@ -134,7 +131,6 @@ fn parse_tls_certificate_key(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 
-// proxy_addr = value
 fn parse_proxy_addr(input: &str) -> IResult<&str, &str> {
     preceded(
         tuple((space0, tag("proxy_addr"), space0, char('='), space0)),
@@ -143,7 +139,6 @@ fn parse_proxy_addr(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 
-// proxy_tls = bool
 fn parse_proxy_tls(input: &str) -> IResult<&str, bool> {
     preceded(
         tuple((space0, tag("proxy_tls"), space0, char('='), space0)),
@@ -152,7 +147,6 @@ fn parse_proxy_tls(input: &str) -> IResult<&str, bool> {
     .parse(input)
 }
 
-// proxy_uds = bool
 fn parse_proxy_uds(input: &str) -> IResult<&str, bool> {
     preceded(
         tuple((space0, tag("proxy_uds"), space0, char('='), space0)),
@@ -161,7 +155,6 @@ fn parse_proxy_uds(input: &str) -> IResult<&str, bool> {
     .parse(input)
 }
 
-// prometheus_addr = value
 fn parse_prometheus_addr(input: &str) -> IResult<&str, &str> {
     preceded(
         tuple((space0, tag("prometheus_addr"), space0, char('='), space0)),
@@ -170,7 +163,6 @@ fn parse_prometheus_addr(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 
-// upstreams = vector ([item, item, ...])
 fn parse_vector(input: &str) -> IResult<&str, Vec<String>> {
     delimited(
         preceded(space0, char('[')),
@@ -183,7 +175,6 @@ fn parse_vector(input: &str) -> IResult<&str, Vec<String>> {
     .parse(input)
 }
 
-// health_check = bool
 fn parse_health_check(input: &str) -> IResult<&str, bool> {
     preceded(
         tuple((space0, tag("health_check"), space0, char('='), space0)),
@@ -192,7 +183,6 @@ fn parse_health_check(input: &str) -> IResult<&str, bool> {
     .parse(input)
 }
 
-// health_check_frequency = ASCII_DIGIT+
 fn parse_health_check_frequency(input: &str) -> IResult<&str, u64> {
     preceded(
         tuple((
@@ -207,7 +197,6 @@ fn parse_health_check_frequency(input: &str) -> IResult<&str, u64> {
     .parse(input)
 }
 
-// parallel_health_check = bool
 fn parse_parallel_health_check(input: &str) -> IResult<&str, bool> {
     preceded(
         tuple((
@@ -222,7 +211,6 @@ fn parse_parallel_health_check(input: &str) -> IResult<&str, bool> {
     .parse(input)
 }
 
-// load_balancer_tls = bool
 fn parse_load_balancer_tls(input: &str) -> IResult<&str, bool> {
     preceded(
         tuple((space0, tag("load_balancer_tls"), space0, char('='), space0)),
@@ -231,11 +219,34 @@ fn parse_load_balancer_tls(input: &str) -> IResult<&str, bool> {
     .parse(input)
 }
 
-//
-// Parsers for headers and vectors (for proxy_headers, load_balancer_headers, etc.)
-// A header is defined as: key ":" key or key "," key (simplified).
-//
+// New: parse proxy_headers using the key "proxy_headers"
+fn parse_proxy_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
+    preceded(
+        tuple((space0, tag("proxy_headers"), space0, char('='), space0)),
+        parse_headers,
+    )
+    .parse(input)
+}
 
+// New: parse load_balancer_headers using the key "load_balancer_headers"
+fn parse_lb_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
+    preceded(
+        tuple((
+            space0,
+            tag("load_balancer_headers"),
+            space0,
+            char('='),
+            space0,
+        )),
+        parse_headers,
+    )
+    .parse(input)
+}
+
+//
+// Parsers for headers
+//
+// A header key is either a quoted string or a name.
 fn parse_header_key(input: &str) -> IResult<&str, &str> {
     alt((delimited(char('"'), is_not("\""), char('"')), parse_name)).parse(input)
 }
@@ -263,7 +274,6 @@ fn parse_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
 // Parsers for sections
 //
 
-// Proxy section header: [proxy]
 fn parse_proxy_section(input: &str) -> IResult<&str, ()> {
     let (input, _) = delimited(
         space0,
@@ -274,7 +284,6 @@ fn parse_proxy_section(input: &str) -> IResult<&str, ()> {
     Ok((input, ()))
 }
 
-// Load balancer section header: [load_balancer]
 fn parse_load_balancer_section(input: &str) -> IResult<&str, ()> {
     let (input, _) = delimited(
         space0,
@@ -309,7 +318,7 @@ fn parse_path_section(input: &str) -> IResult<&str, &str> {
 // Parsers for proxy configuration
 //
 
-// Parse one proxy route config (the items inside a path section)
+// Parse a proxy route configuration (typically for routes in a path section)
 fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfig> {
     let mut proxy_path = ProxyPathBaseHostConfig::default();
     let mut input = input;
@@ -318,7 +327,7 @@ fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfi
     if let Ok((i, _)) = parse_path_section.parse(input) {
         input = i;
     }
-    // Now, try to parse any of the proxy route items:
+    // Now, try to parse any proxy route items.
     let mut done = false;
     while !done {
         let res = alt((
@@ -327,7 +336,9 @@ fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfi
             }),
             map(parse_proxy_tls, |b| proxy_path.proxy_tls = Some(b)),
             map(parse_proxy_uds, |b| proxy_path.proxy_uds = Some(b)),
-            map(parse_headers, |hdrs| proxy_path.proxy_headers = Some(hdrs)),
+            map(parse_proxy_headers, |hdrs| {
+                proxy_path.proxy_headers = Some(hdrs)
+            }),
         ))
         .parse(input);
         match res {
@@ -342,13 +353,10 @@ fn parse_proxy_route_config(input: &str) -> IResult<&str, ProxyPathBaseHostConfi
     Ok((input, proxy_path))
 }
 
-// Parse one proxy domain config block:
-// domain_section ~ proxy configuration items ~ optional route configuration
+// Parse one proxy domain configuration block:
+// [[ domain = value ]] followed by one or more proxy items
 fn parse_proxy_domain_config(input: &str) -> IResult<&str, (String, ProxyHostConfig)> {
-    // First, parse the domain
     let (input, domain) = parse_domain_section.parse(input)?;
-
-    // Then parse one or more proxy configuration items for this domain.
     let mut host = ProxyHostConfig::default();
     let mut input = input;
     let mut done = false;
@@ -363,7 +371,7 @@ fn parse_proxy_domain_config(input: &str) -> IResult<&str, (String, ProxyHostCon
             map(parse_proxy_uds, |b| {
                 host.proxy_uds = Some(b);
             }),
-            map(parse_headers, |hdrs| {
+            map(parse_proxy_headers, |hdrs| {
                 host.proxy_headers = Some(hdrs);
             }),
         ))
@@ -377,11 +385,9 @@ fn parse_proxy_domain_config(input: &str) -> IResult<&str, (String, ProxyHostCon
             }
         }
     }
-
-    // Optionally, parse route/path configuration
+    // Optionally, parse route configuration for this domain.
     if let Ok((i, route)) = parse_proxy_route_config.parse(input) {
         let mut routes = HashMap::new();
-        // Use the proxy_addr from the route or a default key.
         routes.insert(
             route.proxy_addr.clone().unwrap_or_else(|| "default".into()),
             route,
@@ -393,20 +399,18 @@ fn parse_proxy_domain_config(input: &str) -> IResult<&str, (String, ProxyHostCon
 }
 
 // Parse the proxy main configuration block:
-// proxy_section ~ proxy_main_config ~ one or more domain blocks.
+// [proxy] then listener, optional certificate pair, then one or more domain blocks.
 fn parse_proxy_config(input: &str) -> IResult<&str, ProxyConfig> {
     let (input, _) = parse_proxy_section.parse(input)?;
-
-    // Parse proxy_main_config items (e.g. listener and tls_certificate/key).
     let mut config = ProxyConfig::default();
     let mut input = input;
 
-    // For simplicity, we assume the listener must appear.
+    // Parse the required listener.
     let (i, listener) = parse_listener.parse(input)?;
     config.listener = listener.to_string();
     input = i;
 
-    // Optionally, parse tls_certificate and tls_certificate_key as a pair.
+    // Optionally, parse tls_certificate and tls_certificate_key.
     if let Ok((i, cert)) = parse_tls_certificate.parse(input) {
         if let Ok((j, key)) = parse_tls_certificate_key.parse(i) {
             config.tls_certificate = Some(cert.to_string());
@@ -414,7 +418,6 @@ fn parse_proxy_config(input: &str) -> IResult<&str, ProxyConfig> {
             input = j;
         }
     }
-
     // Parse one or more domain blocks.
     let mut servers = HashMap::new();
     loop {
@@ -433,8 +436,8 @@ fn parse_proxy_config(input: &str) -> IResult<&str, ProxyConfig> {
 // Parsers for load balancer configuration
 //
 
-// Parse one load balancer domain config block:
-// domain_section ~ optional load_balancer_tls and load_balancer_headers
+// Parse one load balancer domain configuration block.
+// This expects [[ domain = value ]] then optional tls and headers.
 fn parse_lb_domain_config(input: &str) -> IResult<&str, (String, LBHostConfig)> {
     let (input, domain) = parse_domain_section.parse(input)?;
     let mut host = LBHostConfig::default();
@@ -443,25 +446,25 @@ fn parse_lb_domain_config(input: &str) -> IResult<&str, (String, LBHostConfig)> 
         host.load_balancer_tls = tls;
         input = i;
     }
-    if let Ok((i, hdrs)) = parse_headers.parse(input) {
+    if let Ok((i, hdrs)) = parse_lb_headers.parse(input) {
         host.load_balancer_headers = Some(hdrs);
         input = i;
     }
     Ok((input, (domain.to_string(), host)))
 }
 
-// Parse the lb_main_config block.
+// Parse the load balancer main configuration block.
 fn parse_lb_main_config(input: &str) -> IResult<&str, LoadBalancerConfig> {
     let (input, _) = parse_load_balancer_section.parse(input)?;
     let mut config = LoadBalancerConfig::default();
     let mut input = input;
 
-    // listener is required.
+    // Parse the required listener.
     let (i, listener) = parse_listener.parse(input)?;
     config.listener = listener.to_string();
     input = i;
 
-    // Parse upstreams
+    // Parse upstreams.
     if let Ok((i, ups)) = preceded(
         space0,
         preceded(
@@ -475,7 +478,7 @@ fn parse_lb_main_config(input: &str) -> IResult<&str, LoadBalancerConfig> {
         input = i;
     }
 
-    // Optionally, parse tls_certificate and key.
+    // Optionally, parse tls_certificate and tls_certificate_key.
     if let Ok((i, cert)) = parse_tls_certificate.parse(input) {
         if let Ok((j, key)) = parse_tls_certificate_key.parse(i) {
             config.tls_certificate = Some(cert.to_string());
@@ -484,7 +487,7 @@ fn parse_lb_main_config(input: &str) -> IResult<&str, LoadBalancerConfig> {
         }
     }
 
-    // Optionally, parse health_check, frequency and parallel flag.
+    // Optionally, parse health_check, frequency, and parallel_health_check.
     if let Ok((i, check)) = parse_health_check.parse(input) {
         config.health_check = Some(check);
         input = i;
@@ -513,40 +516,35 @@ pub fn parse_config(input: &str) -> IResult<&str, Config> {
     let mut config = Config::default();
     let mut input = input;
 
-    // Optionally parse prometheus_addr if it appears before any section.
+    // Optionally parse prometheus_addr if present.
     if let Ok((i, addr)) = parse_prometheus_addr.parse(input) {
         config.prometheus_addr = Some(addr.to_string());
         input = i;
     }
 
-    // Now parse one or more proxy or load balancer sections.
     loop {
-        // Skip any whitespace
         let (i, _) = multispace0.parse(input)?;
         input = i;
         if input.is_empty() {
             break;
         }
-        // Try proxy config
         if let Ok((i, proxy_cfg)) = parse_proxy_config.parse(input) {
             config.proxy.get_or_insert(Vec::new()).push(proxy_cfg);
             input = i;
             continue;
         }
-        // Try load balancer config
         if let Ok((i, lb_cfg)) = parse_lb_main_config.parse(input) {
             config.load_balancer.get_or_insert(Vec::new()).push(lb_cfg);
             input = i;
             continue;
         }
-        // If neither matches, break.
         break;
     }
     Ok((input, config))
 }
 
 //
-// Tests for all test cases
+// Tests
 //
 #[cfg(test)]
 mod tests {
@@ -570,7 +568,7 @@ mod tests {
         [[domain = example.com]]
         proxy_addr = 192.168.1.1:80
         proxy_tls = true
-        proxy_headers = [[["Content-Type" : "application/json"]]]
+        proxy_headers = [[ [ "Content-Type" : "application/json" ] ]]
         "#;
         let (rest, proxy_cfg) = parse_proxy_config.parse(input).unwrap();
         assert_eq!(proxy_cfg.listener, "0.0.0.0:8080");
@@ -582,17 +580,13 @@ mod tests {
             proxy_cfg.tls_certificate_key.unwrap(),
             "/path/to/key".to_string()
         );
-        // Check that domain exists in servers
         let host_cfg = proxy_cfg.servers.get("example.com").unwrap();
         assert_eq!(host_cfg.proxy_addr, "192.168.1.1:80");
         assert_eq!(host_cfg.proxy_tls, true);
-        // Check proxy_headers if exist
-        assert!(host_cfg.proxy_headers.is_some());
         let headers = host_cfg.proxy_headers.as_ref().unwrap();
         assert_eq!(headers.len(), 1);
         assert_eq!(headers[0].0, "Content-Type");
         assert_eq!(headers[0].1, "application/json");
-        // Ensure all input was consumed or valid remaining whitespace.
         assert!(rest.trim().is_empty());
     }
 
@@ -609,7 +603,7 @@ mod tests {
         parallel_health_check = false
         [[domain = lb.example.com]]
         load_balancer_tls = true
-        load_balancer_headers = [[["X-Forwarded-Proto" : "https"]]]
+        load_balancer_headers = [[ [ "X-Forwarded-Proto" : "https" ] ]]
         "#;
         let (rest, lb_cfg) = parse_lb_main_config.parse(input).unwrap();
         assert_eq!(lb_cfg.listener, "0.0.0.0:9090");
@@ -660,7 +654,6 @@ mod tests {
         "#;
         let (rest, cfg) = parse_config.parse(input).unwrap();
         assert_eq!(cfg.prometheus_addr.unwrap(), "127.0.0.1:9090".to_string());
-        // Check proxy config exists
         let proxy_cfgs = cfg.proxy.unwrap();
         assert_eq!(proxy_cfgs.len(), 1);
         let proxy_cfg = &proxy_cfgs[0];
@@ -668,7 +661,6 @@ mod tests {
         let host_cfg = proxy_cfg.servers.get("example.com").unwrap();
         assert_eq!(host_cfg.proxy_addr, "192.168.1.1:80");
         assert_eq!(host_cfg.proxy_tls, false);
-        // Check load balancer config exists
         let lb_cfgs = cfg.load_balancer.unwrap();
         assert_eq!(lb_cfgs.len(), 1);
         let lb_cfg = &lb_cfgs[0];
