@@ -2,7 +2,7 @@ use nom::{
     IResult, Parser,
     branch::alt,
     bytes::complete::{is_not, tag, take_while1},
-    character::complete::{char, digit1, multispace0, space0},
+    character::complete::{char, digit1, multispace0, multispace1, space0},
     combinator::{map, map_res, opt},
     multi::separated_list0,
     sequence::{delimited, preceded, tuple},
@@ -278,12 +278,11 @@ fn parse_headers(input: &str) -> IResult<&str, Vec<(String, String)>> {
 fn parse_proxy_section(input: &str) -> IResult<&str, ()> {
     // Skip any leading whitespace.
     let (input, _) = multispace0.parse(input)?;
-    let (input, _) = delimited(
-        space0,
-        delimited(char('['), tag("proxy"), char(']')),
-        space0,
-    )
-    .parse(input)?;
+    println!("{input}");
+    let (input, _) =
+        delimited(space0, delimite(char('['), tag("proxy"), char(']')), space0).parse(input)?;
+    println!("bruh");
+    println!("{input}");
     Ok((input, ()))
 }
 

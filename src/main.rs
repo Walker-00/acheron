@@ -344,5 +344,5 @@ fn acheron() -> Result<Config, AcheronError> {
 }
 
 fn main() {
-    acheron().unwrap();
+    println!("{:#?}", acheron().unwrap());
 }
